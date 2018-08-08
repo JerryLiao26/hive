@@ -1,28 +1,28 @@
 <div align=center>
-  ![hive logo](https://raw.githubusercontent.com/JerryLiao26/hive/master/static/hive_small.png)
+  <img src='https://raw.githubusercontent.com/JerryLiao26/hive/master/static/hive_small.png' alt='hive logo'>
 </div>
 
 # hive
 
-<font color=#FECB33>hive</font> is the light-weight and elegant message center for developers
+hive is the light-weight and elegant message center for developers
 
 ## Origin
 
-Originally [LAM](https://github.com/JerryLiao26/LAM), <font color=#FECB33>hive</font> is now a more elegant way to collect your messages.
+Originally [LAM](https://github.com/JerryLiao26/LAM), hive is now a more elegant way to collect your messages.
 
 ## Use
 
-<font color=#FECB33>hive</font> is under heavy develop and has no official release version at the present. If you would like to try it now, try [Develop](#develop) option shown below.
+hive is under heavy develop and has no official release version at the present. If you would like to try it now, try [Develop](#develop) option shown below.
 
 ## Develop
 
 ### Prepare
 
-<font color=#FECB33>hive</font> use [dep](https://golang.github.io/dep/) as Go package manager. Run ```dep ensure``` in project folder will install all dependencies under ```vendor/``` folder.
+hive use [dep](https://golang.github.io/dep/) as Go package manager. Run ```dep ensure``` in project folder will install all dependencies under ```vendor/``` folder.
 
 ### Database
 
-To use <font color=#FECB33>hive</font>, you need a database named ```hive```, and tables as follows:
+To use hive, you need a database named ```hive```, and tables as follows:
 - message
   - id(INT) [PRIMARY, AUTO_INCREMENT]
   - tag(VARCHAR)
