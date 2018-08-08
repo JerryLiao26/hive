@@ -9,25 +9,25 @@
 [![codebeat badge](https://codebeat.co/badges/3737204a-ce9b-4d80-a930-5a8735fd709c)](https://codebeat.co/projects/github-com-jerryliao26-hive-master)
 [![License](https://img.shields.io/github/license/JerryLiao26/hive.svg)](https://opensource.org/licenses/MIT)
 
-hive is the light-weight and elegant message center for developers
+**Hive** is the light-weight and elegant message center for developers
 
 ## Origin
 
-Originally [LAM](https://github.com/JerryLiao26/LAM), hive is now a more elegant way to collect your messages.
+Originally [LAM](https://github.com/JerryLiao26/LAM), **hive** is now a more elegant way to collect your messages.
 
 ## Use
 
-hive is under heavy develop and has no official release version at the present. If you would like to try it now, try [Develop](#develop) option shown below.
+**Hive** is under heavy develop and has no official release version at the present. If you would like to try it now, try [Develop](#develop) option shown below.
 
 ## Develop
 
 ### Prepare
 
-hive use [dep](https://golang.github.io/dep/) as Go package manager. Run ```dep ensure``` in project folder will install all dependencies under ```vendor/``` folder.
+**Hive** use [dep](https://golang.github.io/dep/) as Go package manager. Run ```dep ensure``` in project folder will install all dependencies under ```vendor/``` folder.
 
 ### Database
 
-To use hive, you need a database named ```hive```, and tables as follows:
+To use **hive**, you need a database named ```hive```, and tables as follows:
 - message
   - id(INT) [PRIMARY, AUTO_INCREMENT]
   - tag(VARCHAR)
