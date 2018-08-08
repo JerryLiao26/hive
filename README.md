@@ -52,7 +52,7 @@ Rename the built file to hive, then you shall run server with command
 ```
 hive start 0.0.0.0:12580
 ```
-You shall see a welcome page by visiting ```http://0.0.0.0:12580```. More command can be found with command ```hive help```
+You shall see a welcome page by visiting ```http://0.0.0.0:12580/hello```. More command can be found with command ```hive help```
 
 ## APIs
 
