@@ -49,7 +49,7 @@ var confPath struct {
 	confDir  string
 }
 
-// Datbase config
+// Database config
 var dbConf struct {
 	username string
 	password string
