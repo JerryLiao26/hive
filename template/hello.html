@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>hive is working</title>
+  </head>
+  <style type='text/css'>
+   .container {
+     width: 80%;
+     min-width: 600px;
+     text-align: center;
+     line-height: 128px;
+     margin-top: 20%;
+     margin-left: auto;
+     margin-right: auto;
+     overflow: hidden;
+   }
+   .container img {
+     height: 128px;
+     float: left;
+   }
+   .container div {
+     margin-left: 32px;
+     font-size: 32px;
+     float: left;
+   }
+   .honey {
+     color: #FECB33;
+     font-weight: bold;
+   }
+  </style>
+  <body>
+    <div class="container">
+      <img src="/hive.png" alt="hive logo">
+      <div><span class='honey'>hive</span> is running on port <span class='honey'>{{.}}</span></div>
+    </div>
+  </body>
+</html>
