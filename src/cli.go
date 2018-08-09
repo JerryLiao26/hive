@@ -92,6 +92,8 @@ func helpHandler() {
 	fmt.Println("Commands:")
 	// Print help text
 	fmt.Println("help                       Print help text")
+	fmt.Println("add [name]                 Add an admin with provided name")
+	fmt.Println("auth [token]               Auth an admin to use functions")
 	fmt.Println("list                       List all valid tags and corresponding tokens")
 	fmt.Println("start                      Start server on last used address and port")
 	// fmt.Println("serve                      Start server deamon on last used address and port")
@@ -198,7 +200,7 @@ func firstHandler() {
 	os.MkdirAll(dirString, 0755)
 	saveConf()
 	// Finish
-	fmt.Println("All settled, enjoy using hive!")
+	fmt.Println("You can now use \"hive add [name]\" to add an admin and enjoy using hive!")
 }
 
 func main() {
