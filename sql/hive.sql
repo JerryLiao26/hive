@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 09, 2018 at 08:10 AM
+-- Generation Time: Aug 09, 2018 at 02:19 PM
 -- Server version: 10.2.16-MariaDB
 -- PHP Version: 7.2.8
 
@@ -43,9 +43,9 @@ CREATE TABLE `admin` (
 CREATE TABLE `message` (
   `id` int(11) NOT NULL,
   `tag` varchar(128) NOT NULL,
+  `admin` varchar(32) NOT NULL,
   `content` text NOT NULL,
-  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ifRead` tinyint(1) NOT NULL
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -91,7 +91,7 @@ ALTER TABLE `token`
 -- AUTO_INCREMENT for table `message`
 --
 ALTER TABLE `message`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

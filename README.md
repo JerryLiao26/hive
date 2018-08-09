@@ -31,9 +31,9 @@ To use **hive**, you need a database named ```hive```, and tables as follows:
 - message
   - id(INT) [PRIMARY, AUTO_INCREMENT]
   - tag(VARCHAR)
+  - admin(VARCHAR)
   - content(TEXT)
   - timestamp(DATETIME)
-  - ifRead(TINYINT)
 
 - token
   - tag(VARCHAR) [PRIMARY]
