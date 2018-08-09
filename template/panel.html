@@ -42,6 +42,17 @@
         background-color: #FECB33;
         color: #FFF;
       }
+      .container p {
+        width: 100%;
+        line-height: 36px;
+        text-align: left;
+        font-size: 20px;
+        box-sizing: border-box;
+        float: left;
+      }
+      .container p > span {
+        margin-left: 18px;
+      }
       .honey {
         color: #FECB33;
         font-weight: bold;
@@ -52,7 +63,16 @@
     <div class="container">
       <img src="/hive.png" alt="hive logo">
       <div><span class='honey'>hive</span> control panel</div>
-      <div><button type="button" onclick='location.href="/auth"'>Re-auth</button></div>
+      <div>
+        <button type="button" onclick='location.href="/auth"'>Re-auth</button>
+        <button type="button" onclick='location.href="/hello"'>Back</button>
+      </div>
+      <div>
+        <p>Serve Since:<span id='startTime'></span></p>
+        <p>Admin Name:<span id='adminName'></span></p>
+        <p>Server OS:<span id='serverOS'></span></p>
+        <p>Server Arch:<span id='serverArch'></span></p>
+      </div>
     </div>
   </body>
   <script type="text/javascript">
@@ -65,6 +85,23 @@
             const code = JSON.parse(request.responseText).code
             if (code !== 200) {
               location.href = '/auth'
+            } else {
+              // Reqeust for info
+              const infoRequest = new XMLHttpRequest()
+              infoRequest.onreadystatechange = function() {
+                if (infoRequest.readyState === 4) {
+                  const data = JSON.parse(infoRequest.responseText)
+                  if (data.code === 200) {
+                    // Render data
+                    document.getElementById('startTime').innerHTML = data.startTime
+                    document.getElementById('adminName').innerHTML = data.adminName
+                    document.getElementById('serverOS').innerHTML = data.serverOS
+                    document.getElementById('serverArch').innerHTML = data.serverArch
+                  }
+                }
+              }
+              infoRequest.open("POST", '/info', true)
+              infoRequest.send(JSON.stringify({ sessionId: sessionId }))
             }
           }
         }

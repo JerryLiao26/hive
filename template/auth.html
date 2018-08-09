@@ -1,107 +1,102 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>hive authenticate</title>
+    <style type='text/css'>
+      .container {
+        width: 80%;
+        min-width: 600px;
+        text-align: center;
+        line-height: 128px;
+        margin-top: 38.2vh;
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+      }
+      .container img {
+        height: 128px;
+        float: left;
+      }
+      .container div {
+        margin-left: 32px;
+        font-size: 32px;
+        float: left;
+      }
+      .container button {
+        background-color: #FFF;
+        border-color: #FECB33;
+        border-style: solid;
+        border-width: 1px;
+        padding-left: 16px;
+        padding-right: 16px;
+        box-sizing: border-box;
+        font-size: 24px;
+        height: 50px;
+        outline: none;
+        color: #FECB33;
+        cursor: pointer;
+        transition: all 0.5s;
+      }
+      .container button:hover {
+        background-color: #FECB33;
+        color: #FFF;
+      }
+      .container input {
+        width: 100%;
+        height: 50px;
+        box-sizing: border-box;
+        padding-left: 16px;
+        padding-right: 16px;
+        font-size: 20px;
+        outline: none;
+      }
+      .honey {
+        color: #FECB33;
+        font-weight: bold;
+      }
+    </style>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <title>hive authenticate</title>
-  <style type='text/css'>
-    .container {
-      width: 80%;
-      min-width: 600px;
-      text-align: center;
-      line-height: 128px;
-      margin-top: 38.2vh;
-      margin-left: auto;
-      margin-right: auto;
-      overflow: hidden;
-    }
-
-    .container img {
-      height: 128px;
-      float: left;
-    }
-
-    .container div {
-      margin-left: 32px;
-      font-size: 32px;
-      float: left;
-    }
-
-    .container button {
-      background-color: #FFF;
-      border-color: #FECB33;
-      border-style: solid;
-      border-width: 1px;
-      padding-left: 16px;
-      padding-right: 16px;
-      box-sizing: border-box;
-      font-size: 24px;
-      height: 50px;
-      outline: none;
-      color: #FECB33;
-      cursor: pointer;
-      transition: all 0.5s;
-    }
-
-    .container button:hover {
-      background-color: #FECB33;
-      color: #FFF;
-    }
-
-    .container input {
-      width: 100%;
-      height: 50px;
-      box-sizing: border-box;
-      padding-left: 16px;
-      padding-right: 16px;
-      font-size: 20px;
-      outline: none;
-    }
-
-    .honey {
-      color: #FECB33;
-      font-weight: bold;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <img src="/hive.png" alt="hive logo">
-    <div><span class='honey'>hive</span> authenticate</div>
-    <div><button type="button" onclick='submit()'>Auth</button></div>
-    <input type="text" id='token' placeholder="Your token">
-  </div>
-</body>
-<script type="text/javascript">
-  function submit() {
-    const ele = document.getElementById('token')
-    if (!ele.value || ele.value.trim() === '') {
-      alert('Please enter your token')
-      return false
-    } else {
-      const request = new XMLHttpRequest()
-      request.onreadystatechange = function() {
-        if (request.readyState === 4) {
-          const code = JSON.parse(request.responseText).code
-          if (code !== 200) {
-            alert('Auth failed')
-          } else {
-            const respond = JSON.parse(request.responseText)
-            const sessionId = respond.sessionId
-            const name = respond.name
-            localStorage.setItem('sessionId', sessionId)
-            alert('Auth for admin "' + name + '" success')
-            location.href = '/hello'
+  <body>
+    <div class="container">
+      <img src="/hive.png" alt="hive logo">
+      <div><span class='honey'>hive</span> authenticate</div>
+      <div>
+        <button type="button" onclick='submit()'>Auth</button>
+        <button type="button" onclick='location.href="/hello"'>Back</button>
+      </div>
+      <input type="text" id='token' placeholder="Your token">
+    </div>
+  </body>
+  <script type="text/javascript">
+    function submit() {
+      const ele = document.getElementById('token')
+      if (!ele.value || ele.value.trim() === '') {
+        alert('Please enter your token')
+        return false
+      } else {
+        const request = new XMLHttpRequest()
+        request.onreadystatechange = function() {
+          if (request.readyState === 4) {
+            const code = JSON.parse(request.responseText).code
+            if (code !== 200) {
+              alert('Auth failed')
+            } else {
+              const respond = JSON.parse(request.responseText)
+              const sessionId = respond.sessionId
+              const name = respond.name
+              localStorage.setItem('sessionId', sessionId)
+              alert('Auth for admin "' + name + '" success')
+              location.href = '/hello'
+            }
           }
         }
+        request.open("POST", '/auth', true)
+        request.send(JSON.stringify({
+          token: ele.value
+        }))
       }
-      request.open("POST", '/auth', true)
-      request.send(JSON.stringify({
-        token: ele.value
-      }))
     }
-  }
-</script>
-
+  </script>
 </html>

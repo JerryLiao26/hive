@@ -18,7 +18,7 @@ func initString() string {
 	return dbString
 }
 
-func checkToken(cliToken string) string {
+func checkToken(cliToken string) (string, string) {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -34,18 +34,19 @@ func checkToken(cliToken string) string {
 	// Extract data
 	for res.Next() {
 		var tag string
+		var admin string
 		var token string
 		var timestamp string
-		err := res.Scan(&tag, &token, &timestamp)
+		err := res.Scan(&tag, &admin, &token, &timestamp)
 		databaseError(err)
 		// Compare
 		if token == cliToken {
-			return tag
+			return admin, tag
 		}
 	}
 
 	// Invalid token
-	return ""
+	return "", ""
 }
 
 func checkTagDuplicate(cliTag string) bool {
@@ -107,18 +108,18 @@ func checkAdminDuplicate(newAdmin string) bool {
 	return false
 }
 
-func storeMessage(tag string, content string) bool {
+func storeMessage(admin string, tag string, content string) bool {
 	// Make connect string
 	dbString := initString()
 	// Connect
 	db, err := sql.Open("mysql", dbString)
 	databaseError(err)
 	// Statement
-	stmt, err := db.Prepare("INSERT message SET tag=?, content=?, timestamp=?, ifRead=?")
+	stmt, err := db.Prepare("INSERT message SET tag=?, admin=?, content=?, timestamp=?")
 	databaseError(err)
 
 	// Insert
-	res, err := stmt.Exec(tag, content, time.Now().Format("2006-01-02 15:04:05"), false)
+	res, err := stmt.Exec(tag, admin, content, time.Now().Format("2006-01-02 15:04:05"))
 	databaseError(err)
 
 	db.Close()
@@ -131,6 +132,46 @@ func storeMessage(tag string, content string) bool {
 		return true
 	}
 	return false
+}
+
+func fetchMessages(admin string) []message {
+	// Make connect string
+	dbString := initString()
+	// Connect
+	db, err := sql.Open("mysql", dbString)
+	databaseError(err)
+
+	// Statement
+	stmt, err := db.Prepare("SELECT * FROM message WHERE admin=? ORDER BY timestamp DESC")
+	databaseError(err)
+
+	// Query
+	res, err := stmt.Query(admin)
+	databaseError(err)
+
+	db.Close()
+
+	// Data array
+	var messages []message
+	// Extract data
+	for res.Next() {
+		var id int
+		var tag string
+		var admin string
+		var content string
+		var timestamp string
+		err := res.Scan(&id, &tag, &admin, &content, &timestamp)
+		databaseError(err)
+		// Append data
+		var m message
+		m.ID = id
+		m.Tag = tag
+		m.Admin = admin
+		m.Content = content
+		m.Timestamp = timestamp
+		messages = append(messages, m)
+	}
+	return messages
 }
 
 func storeToken(tag string, token string) bool {
@@ -212,9 +253,10 @@ func fetchToken() []string {
 	// Extract data
 	for res.Next() {
 		var tag string
+		var admin string
 		var token string
 		var timestamp string
-		err := res.Scan(&tag, &token, &timestamp)
+		err := res.Scan(&tag, &admin, &token, &timestamp)
 		databaseError(err)
 		// Append data
 		str := tag + ":" + token

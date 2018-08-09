@@ -74,6 +74,13 @@ var cliConf struct {
 	admin string
 }
 
+// serverInfo stores server info
+var serverInfo struct {
+	startTime  string
+	serverOS   string
+	serverArch string
+}
+
 // Config file
 type confItem string
 

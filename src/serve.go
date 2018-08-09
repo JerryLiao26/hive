@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"runtime"
+	"time"
 )
 
 // GET method
@@ -13,15 +15,48 @@ const GET string = "GET"
 // POST method
 const POST string = "POST"
 
-// message defines message struct
+// message defines struct to store message data from database
 type message struct {
+	ID        int    `json:"id"`
+	Tag       string `json:"tag"`
+	Admin     string `json:"admin"`
+	Content   string `json:"content"`
+	Timestamp string `json:"timestamp"`
+}
+
+// messageRequest defines message request struct
+type messageRequest struct {
 	Text  string `json:"text"`
 	Token string `json:"token"`
+}
+
+// messageRespond defines message respond struct
+type messageRespond struct {
+	Code     int       `json:"code"`
+	Text     string    `json:"text"`
+	Method   string    `json:"method"`
+	Messages []message `json:"messages"`
 }
 
 // tokenAuth is for token authorize
 type tokenAuth struct {
 	Token string `json:"token"`
+}
+
+// sessionValidate defines session validate request
+type sessionValidate struct {
+	SessionID string `json:"sessionId"`
+}
+
+// infoRespond defines respond struct for request
+type infoRespond struct {
+	Code       int    `json:"code"`
+	Text       string `json:"text"`
+	Method     string `json:"method"`
+	StartTime  string `json:"startTime"`
+	ServerOS   string `json:"serverOS"`
+	ServerArch string `json:"serverArch"`
+	AdminName  string `json:"adminName"`
 }
 
 // authRespond defines respond struct after auth
@@ -33,24 +68,11 @@ type authRespond struct {
 	SessionID string `json:"sessionId"`
 }
 
-// sessionValidate defines session validate request
-type sessionValidate struct {
-	SessionID string `json:"sessionId"`
-}
-
 // serverRespond defines respond struct
 type serverRespond struct {
 	Code   int    `json:"code"`
 	Text   string `json:"text"`
 	Method string `json:"method"`
-}
-
-// sendRespond defines respond struct
-type sendRespond struct {
-	Code   int    `json:"code"`
-	Tag    string `json:"tag"`
-	Text   string `json:"text"`
-	Sender string `json:"sender"`
 }
 
 func enterLog(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +83,6 @@ func enterLog(w http.ResponseWriter, r *http.Request) {
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	enterLog(w, r)
-	fmt.Println("request", r)
 	t := template.Must(template.ParseFiles("template/hello.html"))
 	t.Execute(w, serveConf.port)
 }
@@ -82,7 +103,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		name, flag := fetchAdmin(ta.Token)
 		if flag {
 			// Generate session
-			sessionID := addSession(ta.Token, r)
+			sessionID := addSession(name, ta.Token, r)
 			//  Response to client
 			ar := authRespond{
 				Code:      200,
@@ -109,7 +130,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 				serverLogger("JSON build error", err.Error(), ERROR)
 			}
 			fmt.Fprintf(w, string(output))
-			serverLogger("Auth token invalid", ta.Token, ERROR)
+			serverLogger("Auth token invalid", ta.Token, WARN)
 		}
 	} else {
 		sr := serverRespond{
@@ -126,8 +147,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func sessionHandler(w http.ResponseWriter, r *http.Request) {
-	enterLog(w, r)
+func messagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == POST {
 		var sv sessionValidate
 		decoder := json.NewDecoder(r.Body)
@@ -135,20 +155,22 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			serverLogger("JSON parse error", err.Error(), ERROR)
 		}
-		flag := validateSession(sv.SessionID, r)
+		name, flag := validateSession(sv.SessionID, r)
 		if flag {
-			//  Response to client
-			sr := serverRespond{
-				Code:   200,
-				Method: r.Method,
-				Text:   "Session verified",
+			group := fetchMessages(name)
+			// Respond to client
+			mr := messageRespond{
+				Code:     200,
+				Text:     "Session verified",
+				Method:   r.Method,
+				Messages: group,
 			}
-			output, err := json.Marshal(sr)
+			output, err := json.Marshal(mr)
 			if err != nil {
 				serverLogger("JSON build error", err.Error(), ERROR)
 			}
 			fmt.Fprintf(w, string(output))
-			serverLogger("Session verified", sv.SessionID, INFO)
+			serverLogger("Messages delivered", r.RemoteAddr, INFO)
 		} else {
 			//  Response to client
 			sr := serverRespond{
@@ -161,7 +183,59 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 				serverLogger("JSON build error", err.Error(), ERROR)
 			}
 			fmt.Fprintf(w, string(output))
-			serverLogger("Session invalid", sv.SessionID, ERROR)
+			serverLogger("Session invalid", sv.SessionID, WARN)
+		}
+	} else {
+		sr := serverRespond{
+			Code:   400,
+			Method: r.Method,
+			Text:   "Method not allowed",
+		}
+		output, err := json.Marshal(sr)
+		if err != nil {
+			serverLogger("JSON build error", err.Error(), ERROR)
+		}
+		fmt.Fprintf(w, string(output))
+		serverLogger("Message warning", r.Method+" method is not allowed for /messages, abandoned", WARN)
+	}
+}
+
+func sessionHandler(w http.ResponseWriter, r *http.Request) {
+	enterLog(w, r)
+	if r.Method == POST {
+		var sv sessionValidate
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&sv)
+		if err != nil {
+			serverLogger("JSON parse error", err.Error(), ERROR)
+		}
+		name, flag := validateSession(sv.SessionID, r)
+		if flag {
+			//  Response to client
+			sr := serverRespond{
+				Code:   200,
+				Method: r.Method,
+				Text:   "Session verified",
+			}
+			output, err := json.Marshal(sr)
+			if err != nil {
+				serverLogger("JSON build error", err.Error(), ERROR)
+			}
+			fmt.Fprintf(w, string(output))
+			serverLogger("Session of admin \""+name+"\" verified", sv.SessionID, INFO)
+		} else {
+			//  Response to client
+			sr := serverRespond{
+				Code:   500,
+				Method: r.Method,
+				Text:   "Session invalid",
+			}
+			output, err := json.Marshal(sr)
+			if err != nil {
+				serverLogger("JSON build error", err.Error(), ERROR)
+			}
+			fmt.Fprintf(w, string(output))
+			serverLogger("Session invalid", sv.SessionID, WARN)
 		}
 	} else {
 		sr := serverRespond{
@@ -218,18 +292,73 @@ func panelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func infoHandler(w http.ResponseWriter, r *http.Request) {
+	enterLog(w, r)
+	if r.Method == POST {
+		var sv sessionValidate
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&sv)
+		if err != nil {
+			serverLogger("JSON parse error", err.Error(), ERROR)
+		}
+		name, flag := validateSession(sv.SessionID, r)
+		if flag {
+			ir := infoRespond{
+				Code:       200,
+				Text:       "Session verified",
+				Method:     r.Method,
+				StartTime:  serverInfo.startTime,
+				ServerOS:   serverInfo.serverOS,
+				ServerArch: serverInfo.serverArch,
+				AdminName:  name,
+			}
+			output, err := json.Marshal(ir)
+			if err != nil {
+				serverLogger("Session invalid", sv.SessionID, ERROR)
+			}
+			fmt.Fprintf(w, string(output))
+			serverLogger("Info sent", r.RemoteAddr, INFO)
+		} else {
+			//  Response to client
+			sr := serverRespond{
+				Code:   500,
+				Method: r.Method,
+				Text:   "Session invalid",
+			}
+			output, err := json.Marshal(sr)
+			if err != nil {
+				serverLogger("JSON build error", err.Error(), ERROR)
+			}
+			fmt.Fprintf(w, string(output))
+			serverLogger("Session invalid", sv.SessionID, WARN)
+		}
+	} else {
+		sr := serverRespond{
+			Code:   400,
+			Method: r.Method,
+			Text:   "Method not allowed",
+		}
+		output, err := json.Marshal(sr)
+		if err != nil {
+			serverLogger("JSON build error", err.Error(), ERROR)
+		}
+		fmt.Fprintf(w, string(output))
+		serverLogger("Info warning", r.Method+" method is not allowed for /info, abandoned", WARN)
+	}
+}
+
 func sendHandler(w http.ResponseWriter, r *http.Request) {
 	enterLog(w, r)
 	if r.Method == POST {
-		var m message
+		var m messageRequest
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&m)
 		if err != nil {
 			serverLogger("JSON parse error", err.Error(), ERROR)
 		}
 		// Checking token
-		res := checkToken(m.Token)
-		if res == "" {
+		name, tag := checkToken(m.Token)
+		if tag == "" {
 			//  Response to client
 			sr := serverRespond{
 				Code:   400,
@@ -243,34 +372,33 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, string(output))
 			serverLogger("Token invalid", m.Token, WARN)
 		} else {
-			user := res
 			// Storing data
-			if storeMessage(user, m.Text) {
+			if storeMessage(name, tag, m.Text) {
 				//  Response to client
 				sr := serverRespond{
 					Code:   200,
 					Method: r.Method,
-					Text:   "Message from " + user + " saved",
+					Text:   "Message from " + tag + " saved",
 				}
 				output, err := json.Marshal(sr)
 				if err != nil {
 					serverLogger("JSON build error", err.Error(), ERROR)
 				}
 				fmt.Fprintf(w, string(output))
-				serverLogger("Message from", user, INFO)
+				serverLogger("Message from", tag, INFO)
 			} else {
 				//  Response to client
 				sr := serverRespond{
 					Code:   500,
 					Method: r.Method,
-					Text:   "Message from " + user + " could not save",
+					Text:   "Message from " + tag + " could not save",
 				}
 				output, err := json.Marshal(sr)
 				if err != nil {
 					serverLogger("JSON build error", err.Error(), ERROR)
 				}
 				fmt.Fprintf(w, string(output))
-				serverLogger("Message saving failed", user, ERROR)
+				serverLogger("Message saving failed", tag, WARN)
 			}
 		}
 	} else {
@@ -293,15 +421,20 @@ func serve() {
 	serveString := serveConf.addr + ":" + serveConf.port
 	// Handlers
 	http.HandleFunc("/send", sendHandler)
-	http.HandleFunc("/hello", helloHandler)
+	http.HandleFunc("/info", infoHandler)
 	http.HandleFunc("/auth", authHandler)
-	http.HandleFunc("/session", sessionHandler)
+	http.HandleFunc("/hello", helloHandler)
 	http.HandleFunc("/panel", panelHandler)
+	http.HandleFunc("/session", sessionHandler)
+	http.HandleFunc("/messages", messagesHandler)
 	http.HandleFunc("/dashboard", dashboardHandler)
 	// Static files
 	fileServer := http.FileServer(http.Dir("static"))
 	http.Handle("/", fileServer)
 	// Server start
+	serverInfo.startTime = time.Now().Format("2006-01-02 15:04:05")
+	serverInfo.serverOS = runtime.GOOS
+	serverInfo.serverArch = runtime.GOARCH
 	serverLogger("Starting", "Serve at "+serveString, INFO)
 	err := http.ListenAndServe(serveString, nil)
 	// Error
