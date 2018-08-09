@@ -63,18 +63,93 @@ You shall see a welcome page by visiting ```http://0.0.0.0:12580/hello```. More 
 ## Pages
 
 ### /hello
-Welcome and navigation page of **hive**.
+Welcome and navigation page of **hive**
 
 ### /auth
-Enter your admin token to grant you permission for using ```/dashboard``` and ```/control```.
+Enter your admin token to grant you permission for using ```/dashboard``` and ```/panel```, session is valid for 24 hours
 
 ### /panel
-Show server status, informations about this **hive** and so on.
+Show server status, informations about this **hive** and so on
 
 ### /dashboard
-Show tags of the authorized admin, as well as messages.
+Show tags of the authorized admin, as well as messages. Dashboard automatically refresh message list every 5 seconds
 
-## API
+## APIs
+
+### /auth
+- Method: POST
+- Require:
+```json
+{
+  "token": "Your token here"
+}
+```
+- Respond:
+```json
+{
+  "code": 200,
+  "text": "Token verified",
+  "method": "POST"
+}
+```
+
+### /info
+- Method: POST
+- Require:
+```json
+{
+  "sessionId": "Your session ID here"
+}
+```
+- Respond:
+```json
+{
+  "code": 200,
+  "text": "Session verified",
+  "adminName": "Your admin name",
+  "startTime": "2018-08-08 18:08:08",
+  "serverOS": "linux",
+  "serverArch": "amd64",
+  "method": "POST"
+}
+```
+
+### /session
+- Method: POST
+- Require:
+```json
+{
+  "sessionId": "Your session ID here"
+}
+```
+- Respond:
+```json
+{
+  "code": 200,
+  "text": "Session verified",
+  "method": "POST"
+}
+```
+
+### /messages
+- Method: POST
+- Require:
+```json
+{
+  "sessionId": "Your session ID here"
+}
+```
+- Respond:
+```json
+{
+  "code": 200,
+  "text": "Session verified",
+  "messages": [
+    {"id": 0, "tag": "wow", "admin": "test", "content": "hello", "timestamp": "2018-08-09T16:22:59Z"}
+  ],
+  "method": "POST"
+}
+```
 
 ### /send
 - Method: POST
@@ -96,5 +171,8 @@ Show tags of the authorized admin, as well as messages.
 
 ## To-dos
 
+- [ ] Add super admin and a button to restart **hive** for him/her
+- [ ] Add limit for API request(e.g. 60/min)
+- [ ] Improve token generate methods
 - [ ] Running with goroutine
 - [ ] Server daemon
