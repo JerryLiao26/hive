@@ -37,29 +37,33 @@ func startHandler() {
 }
 
 func genHandler() {
-	if len(os.Args) >= 3 {
-		// Get data
-		tag := os.Args[2]
-		plain := tag + "hive"
-		// Check duplicate
-		if !checkTagDuplicate(tag) {
-			// Crypt with MD5
-			obj := md5.New()
-			obj.Write([]byte(plain))
-			cipher := obj.Sum(nil)
-			token := hex.EncodeToString(cipher)
-			// Store generated token
-			if storeToken(tag, token) {
-				cliLogger("Generated token:" + token)
-				cliLogger("Token with tag \"" + tag + "\" stored successfully")
+	if cliConf.admin != "" {
+		if len(os.Args) >= 3 {
+			// Get data
+			tag := os.Args[2]
+			plain := tag + "hive"
+			// Check duplicate
+			if !checkTagDuplicate(tag) {
+				// Crypt with MD5
+				obj := md5.New()
+				obj.Write([]byte(plain))
+				cipher := obj.Sum(nil)
+				token := hex.EncodeToString(cipher)
+				// Store generated token
+				if storeToken(tag, token) {
+					cliLogger("Generated token:" + token)
+					cliLogger("Token with tag \"" + tag + "\" stored successfully")
+				} else {
+					cliLogger("Token store failed")
+				}
 			} else {
-				cliLogger("Token store failed")
+				cliLogger("Tag duplicated. Please run \"hive list\" to see stored tags")
 			}
 		} else {
-			cliLogger("Tag duplicated. Please run \"hive list\" to see stored tags")
+			helpHandler()
 		}
 	} else {
-		helpHandler()
+		cliLogger("No authorized admin, please use hive auth [token] to authorize")
 	}
 }
 
@@ -99,27 +103,78 @@ func helpHandler() {
 }
 
 func listHandler() {
-	output := fetchToken()
-	cliLogger("Stored token are listed below as \"tag:token\":")
-	for i := 0; i < len(output); i++ {
-		fmt.Println(output[i])
+	if cliConf.admin != "" {
+		output := fetchToken()
+		cliLogger("Stored token are listed below as \"tag:token\":")
+		for i := 0; i < len(output); i++ {
+			fmt.Println(output[i])
+		}
+	} else {
+		cliLogger("No authorized admin, please use hive auth [token] to authorize")
+	}
+}
+
+func authCliHandler() {
+	if len(os.Args) >= 3 {
+		token := os.Args[2]
+		name, flag := fetchAdmin(token)
+		if flag {
+			cliConf.admin = name
+			saveConf() // Save authorized admin
+			cliLogger("Admin \"" + name + "\" authorized successfully")
+		} else {
+			cliLogger("No such admin with token \"" + token + "\"")
+		}
+	} else {
+		helpHandler()
+	}
+}
+
+func addHandler() {
+	if len(os.Args) >= 3 {
+		// Get data
+		admin := os.Args[2]
+		plain := admin + "hive"
+		// Check duplicate
+		if !checkAdminDuplicate(admin) {
+			// Crypt with MD5
+			obj := md5.New()
+			obj.Write([]byte(plain))
+			cipher := obj.Sum(nil)
+			token := hex.EncodeToString(cipher)
+			// Store generated token
+			if storeAdmin(admin, token) {
+				cliLogger("Generated token:" + token)
+				cliLogger("Admin \"" + admin + "\" stored successfully")
+			} else {
+				cliLogger("Token store failed")
+			}
+		} else {
+			cliLogger("Admin duplicated.")
+		}
+	} else {
+		helpHandler()
 	}
 }
 
 func delHandler() {
-	if len(os.Args) >= 3 {
-		tag := os.Args[2]
-		if checkTagDuplicate(tag) {
-			if delToken(tag) {
-				cliLogger("Token with tag \"" + tag + "\" deleted")
+	if cliConf.admin != "" {
+		if len(os.Args) >= 3 {
+			tag := os.Args[2]
+			if checkTagDuplicate(tag) {
+				if delToken(tag) {
+					cliLogger("Token with tag \"" + tag + "\" deleted")
+				} else {
+					cliLogger("Token delete failed")
+				}
 			} else {
-				cliLogger("Token delete failed")
+				cliLogger("No such tag named \"" + tag + "\". Please run \"hive list\" to see stored tags")
 			}
 		} else {
-			cliLogger("No such tag named \"" + tag + "\". Please run \"hive list\" to see stored tags")
+			helpHandler()
 		}
 	} else {
-		helpHandler()
+		cliLogger("No authorized admin, please use hive auth [token] to authorize")
 	}
 }
 

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>hive dashboard</title>
+    <style type='text/css'>
+      .container {
+        width: 80%;
+        min-width: 600px;
+        text-align: center;
+        line-height: 128px;
+        margin-top: 32px;
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+      }
+      .container img {
+        height: 128px;
+        float: left;
+      }
+      .container div {
+        margin-left: 32px;
+        font-size: 32px;
+        float: left;
+      }
+      .container button {
+        background-color: #FFF;
+        border-color: #FECB33;
+        border-style: solid;
+        border-width: 1px;
+        padding-left: 16px;
+        padding-right: 16px;
+        box-sizing: border-box;
+        font-size: 24px;
+        height: 50px;
+        outline: none;
+        color: #FECB33;
+        cursor: pointer;
+        transition: all 0.5s;
+      }
+      .container button:hover {
+        background-color: #FECB33;
+        color: #FFF;
+      }
+      .honey {
+        color: #FECB33;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body onload='checkSession()'>
+    <div class="container">
+      <img src="/hive.png" alt="hive logo">
+      <div><span class='honey'>hive</span> dashboard</div>
+      <div><button type="button" onclick='location.href="/auth"'>Re-auth</button></div>
+    </div>
+  </body>
+  <script type="text/javascript">
+    function checkSession() {
+      const sessionId = localStorage.getItem('sessionId')
+      if (sessionId) {
+        const request = new XMLHttpRequest()
+        request.onreadystatechange = function() {
+          if (request.readyState === 4) {
+            const code = JSON.parse(request.responseText).code
+            if (code !== 200) {
+              location.href = '/auth'
+            }
+          }
+        }
+        request.open("POST", '/session', true)
+        request.send(JSON.stringify({ sessionId: sessionId }))
+      } else {
+        location.href = '/auth'
+      }
+    }
+  </script>
+</html>

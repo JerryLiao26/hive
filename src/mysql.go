@@ -78,6 +78,35 @@ func checkTagDuplicate(cliTag string) bool {
 	return false
 }
 
+func checkAdminDuplicate(newAdmin string) bool {
+	// Make connect string
+	dbString := initString()
+	// Connect
+	db, err := sql.Open("mysql", dbString)
+	databaseError(err)
+
+	// Query
+	res, err := db.Query("SELECT * FROM admin")
+	databaseError(err)
+
+	db.Close()
+
+	// Extract data
+	for res.Next() {
+		var admin string
+		var token string
+		err := res.Scan(&admin, &token)
+		databaseError(err)
+		// Compare
+		if admin == newAdmin {
+			return true
+		}
+	}
+
+	// No duplicate tag
+	return false
+}
+
 func storeMessage(tag string, content string) bool {
 	// Make connect string
 	dbString := initString()
@@ -105,6 +134,7 @@ func storeMessage(tag string, content string) bool {
 }
 
 func storeToken(tag string, token string) bool {
+	admin := cliConf.admin
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -112,11 +142,11 @@ func storeToken(tag string, token string) bool {
 	databaseError(err)
 
 	// Statement
-	stmt, err := db.Prepare("INSERT token SET tag=?, token=?, timestamp=?")
+	stmt, err := db.Prepare("INSERT token SET tag=?, token=?, admin=?, timestamp=?")
 	databaseError(err)
 
 	// Insert
-	res, err := stmt.Exec(tag, token, time.Now().Format("2006-01-02 15:04:05"))
+	res, err := stmt.Exec(tag, token, admin, time.Now().Format("2006-01-02 15:04:05"))
 	databaseError(err)
 
 	db.Close()
@@ -132,6 +162,7 @@ func storeToken(tag string, token string) bool {
 }
 
 func delToken(cliTag string) bool {
+	admin := cliConf.admin
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -139,11 +170,11 @@ func delToken(cliTag string) bool {
 	databaseError(err)
 
 	// Statement
-	stmt, err := db.Prepare("DELETE FROM token WHERE tag=?")
+	stmt, err := db.Prepare("DELETE FROM token WHERE tag=? AND admin=?")
 	databaseError(err)
 
 	// Insert
-	res, err := stmt.Exec(cliTag)
+	res, err := stmt.Exec(cliTag, admin)
 	databaseError(err)
 
 	db.Close()
@@ -159,14 +190,19 @@ func delToken(cliTag string) bool {
 }
 
 func fetchToken() []string {
+	admin := cliConf.admin
 	// Make connect string
 	dbString := initString()
 	// Connect
 	db, err := sql.Open("mysql", dbString)
 	databaseError(err)
 
+	// Statement
+	stmt, err := db.Prepare("SELECT * FROM token WHERE admin=?")
+	databaseError(err)
+
 	// Query
-	res, err := db.Query("SELECT * FROM token")
+	res, err := stmt.Query(admin)
 	databaseError(err)
 
 	db.Close()
@@ -185,4 +221,57 @@ func fetchToken() []string {
 		tagNtoken = append(tagNtoken, str)
 	}
 	return tagNtoken
+}
+
+func storeAdmin(admin string, token string) bool {
+	// Make connect string
+	dbString := initString()
+	// Connect
+	db, err := sql.Open("mysql", dbString)
+	databaseError(err)
+
+	// Statement
+	stmt, err := db.Prepare("INSERT admin SET name=?, token=?, timestamp=?")
+	databaseError(err)
+
+	// Insert
+	res, err := stmt.Exec(admin, token, time.Now().Format("2006-01-02 15:04:05"))
+	databaseError(err)
+
+	db.Close()
+
+	// Validate
+	num, err := res.RowsAffected()
+	databaseError(err)
+
+	if num == 1 {
+		return true
+	}
+	return false
+}
+
+func fetchAdmin(token string) (string, bool) {
+	// Make connect string
+	dbString := initString()
+	// Connect
+	db, err := sql.Open("mysql", dbString)
+	databaseError(err)
+
+	// Statement
+	stmt, err := db.Prepare("SELECT * FROM admin WHERE token=?")
+	databaseError(err)
+
+	// Query
+	var name string
+	var dbToken string
+	var timestamp string
+	err = stmt.QueryRow(token).Scan(&name, &dbToken, &timestamp)
+	if err == sql.ErrNoRows {
+		return "", false
+	}
+	databaseError(err)
+
+	db.Close()
+
+	return name, true
 }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 08, 2018 at 08:12 AM
+-- Generation Time: Aug 09, 2018 at 08:10 AM
 -- Server version: 10.2.16-MariaDB
 -- PHP Version: 7.2.8
 
@@ -21,6 +21,18 @@ SET time_zone = "+00:00";
 --
 -- Database: `hive`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `admin`
+--
+
+CREATE TABLE `admin` (
+  `name` varchar(32) NOT NULL,
+  `token` varchar(128) NOT NULL,
+  `timestamp` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -44,6 +56,7 @@ CREATE TABLE `message` (
 
 CREATE TABLE `token` (
   `tag` varchar(32) NOT NULL,
+  `admin` varchar(32) NOT NULL,
   `token` varchar(128) NOT NULL,
   `timestamp` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -51,6 +64,12 @@ CREATE TABLE `token` (
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `admin`
+--
+ALTER TABLE `admin`
+  ADD PRIMARY KEY (`name`);
 
 --
 -- Indexes for table `message`

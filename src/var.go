@@ -21,14 +21,20 @@ const HELP Command = "help"
 // LIST command
 const LIST Command = "list"
 
+// AUTH command
+const AUTH Command = "auth"
+
+// ADD command
+const ADD Command = "add"
+
 // DEL command
 const DEL Command = "del"
 
 // Supported commands
-var supportedCommands = [...]Command{HELP, START, GEN, SET, LIST, DEL}
+var supportedCommands = [...]Command{HELP, START, GEN, SET, LIST, AUTH, ADD, DEL}
 
 // Supported command Handler
-var supportedCommandHandlers = [...]func(){helpHandler, startHandler, genHandler, setHandler, listHandler, delHandler}
+var supportedCommandHandlers = [...]func(){helpHandler, startHandler, genHandler, setHandler, listHandler, authCliHandler, addHandler, delHandler}
 
 // LogLevel is to defined logging level
 type LogLevel string
@@ -63,6 +69,11 @@ var serveConf struct {
 	port string
 }
 
+// Cli config
+var cliConf struct {
+	admin string
+}
+
 // Config file
 type confItem string
 
@@ -84,8 +95,11 @@ const serveAddress confItem = "SERVE_ADDRESS"
 // serveAddress defines serve address in config File
 const servePort confItem = "SERVE_PORT"
 
+// authAdmin defines current authorized admin on cli
+const authAdmin confItem = "AUTH_ADMIN"
+
 // Config file items
-var confItems = [...]confItem{dbUsername, dbPassword, dbAddress, dbPort, serveAddress, servePort}
+var confItems = [...]confItem{dbUsername, dbPassword, dbAddress, dbPort, serveAddress, servePort, authAdmin}
 
 // Config file matcher
-var confItemMatcher = [...]*string{&dbConf.username, &dbConf.password, &dbConf.addr, &dbConf.port, &serveConf.addr, &serveConf.port}
+var confItemMatcher = [...]*string{&dbConf.username, &dbConf.password, &dbConf.addr, &dbConf.port, &serveConf.addr, &serveConf.port, &cliConf.admin}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html dir="ltr">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
     <title>hive is working</title>
@@ -10,7 +10,7 @@
      min-width: 600px;
      text-align: center;
      line-height: 128px;
-     margin-top: 20%;
+     margin-top: 38.2vh;
      margin-left: auto;
      margin-right: auto;
      overflow: hidden;
@@ -24,6 +24,25 @@
      font-size: 32px;
      float: left;
    }
+   .container button {
+     background-color: #FFF;
+     border-color: #FECB33;
+     border-style: solid;
+     border-width: 1px;
+     padding-left: 16px;
+     padding-right: 16px;
+     box-sizing: border-box;
+     font-size: 24px;
+     height: 50px;
+     outline: none;
+     color: #FECB33;
+     cursor: pointer;
+     transition: all 0.5s;
+   }
+   .container button:hover {
+     background-color: #FECB33;
+     color: #FFF;
+   }
    .honey {
      color: #FECB33;
      font-weight: bold;
@@ -33,6 +52,10 @@
     <div class="container">
       <img src="/hive.png" alt="hive logo">
       <div><span class='honey'>hive</span> is running on port <span class='honey'>{{.}}</span></div>
+      <div>
+        <button type="button" onclick='location.href="/dashboard"'>Dashboard</button>
+        <button type="button" onclick='location.href="/panel"'>Control Panel</button>
+      </div>
     </div>
   </body>
 </html>
