@@ -32,13 +32,19 @@ To use **hive**, you need a database named ```hive```, and tables as follows:
   - id(INT) [PRIMARY, AUTO_INCREMENT]
   - tag(VARCHAR)
   - content(TEXT)
-  - timestamp(TIMESTAMP)
+  - timestamp(DATETIME)
   - ifRead(TINYINT)
 
 - token
   - tag(VARCHAR) [PRIMARY]
   - token(VARCHAR)
-  - timestamp(TIMESTAMP)
+  - admin(VARCHAR)
+  - timestamp(DATETIME)
+
+- admin
+  - name(VARCHAR) [PRIMARY]
+  - token(VARCHAR)
+  - timestamp(DATETIME)
 
 There's an sql file under ```sql/``` for you to import
 
@@ -54,7 +60,21 @@ hive start 0.0.0.0:12580
 ```
 You shall see a welcome page by visiting ```http://0.0.0.0:12580/hello```. More command can be found with command ```hive help```
 
-## APIs
+## Pages
+
+### /hello
+Welcome and navigation page of **hive**.
+
+### /auth
+Enter your admin token to grant you permission for using ```/dashboard``` and ```/control```.
+
+### /panel
+Show server status, informations about this **hive** and so on.
+
+### /dashboard
+Show tags of the authorized admin, as well as messages.
+
+## API
 
 ### /send
 - Method: POST
@@ -73,3 +93,8 @@ You shall see a welcome page by visiting ```http://0.0.0.0:12580/hello```. More 
   "method": "POST"
 }
 ```
+
+## To-dos
+
+- [ ] Running with goroutine
+- [ ] Server daemon
