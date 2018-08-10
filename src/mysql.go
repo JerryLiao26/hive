@@ -65,9 +65,10 @@ func checkTagDuplicate(cliTag string) bool {
 	// Extract data
 	for res.Next() {
 		var tag string
+		var admin string
 		var token string
 		var timestamp string
-		err := res.Scan(&tag, &token, &timestamp)
+		err := res.Scan(&tag, &admin, &token, &timestamp)
 		databaseError(err)
 		// Compare
 		if tag == cliTag {
