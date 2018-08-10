@@ -15,6 +15,16 @@ const GET string = "GET"
 // POST method
 const POST string = "POST"
 
+// tokenAuth is for token authorize
+type tokenAuth struct {
+	Token string `json:"token"`
+}
+
+// sessionValidate defines session validate request
+type sessionValidate struct {
+	SessionID string `json:"sessionId"`
+}
+
 // message defines struct to store message data from database
 type message struct {
 	ID        int    `json:"id"`
@@ -36,16 +46,6 @@ type messageRespond struct {
 	Text     string    `json:"text"`
 	Method   string    `json:"method"`
 	Messages []message `json:"messages"`
-}
-
-// tokenAuth is for token authorize
-type tokenAuth struct {
-	Token string `json:"token"`
-}
-
-// sessionValidate defines session validate request
-type sessionValidate struct {
-	SessionID string `json:"sessionId"`
 }
 
 // infoRespond defines respond struct for request
@@ -79,6 +79,19 @@ func enterLog(w http.ResponseWriter, r *http.Request) {
 	serverLogger("From", r.RemoteAddr, INFO)
 	serverLogger(r.Method, r.URL.Path, INFO)
 	serverLogger("Scheme", r.URL.Scheme, INFO)
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	sr := serverRespond{
+		Code:   400,
+		Method: r.Method,
+		Text:   "Method not allowed",
+	}
+	output, err := json.Marshal(sr)
+	if err != nil {
+		serverLogger("JSON build error", err.Error(), ERROR)
+	}
+	fmt.Fprintf(w, string(output))
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
@@ -133,16 +146,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			serverLogger("Auth token invalid", ta.Token, WARN)
 		}
 	} else {
-		sr := serverRespond{
-			Code:   400,
-			Method: r.Method,
-			Text:   "Method not allowed",
-		}
-		output, err := json.Marshal(sr)
-		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
-		}
-		fmt.Fprintf(w, string(output))
+		methodNotAllowed(w, r)
 		serverLogger("Auth warning", r.Method+" method is not allowed for /auth, abandoned", WARN)
 	}
 }
@@ -186,16 +190,7 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 			serverLogger("Session invalid", sv.SessionID, WARN)
 		}
 	} else {
-		sr := serverRespond{
-			Code:   400,
-			Method: r.Method,
-			Text:   "Method not allowed",
-		}
-		output, err := json.Marshal(sr)
-		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
-		}
-		fmt.Fprintf(w, string(output))
+		methodNotAllowed(w, r)
 		serverLogger("Message warning", r.Method+" method is not allowed for /messages, abandoned", WARN)
 	}
 }
@@ -238,16 +233,7 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 			serverLogger("Session invalid", sv.SessionID, WARN)
 		}
 	} else {
-		sr := serverRespond{
-			Code:   400,
-			Method: r.Method,
-			Text:   "Method not allowed",
-		}
-		output, err := json.Marshal(sr)
-		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
-		}
-		fmt.Fprintf(w, string(output))
+		methodNotAllowed(w, r)
 		serverLogger("Session warning", r.Method+" method is not allowed for /session, abandoned", WARN)
 	}
 }
@@ -278,16 +264,7 @@ func panelHandler(w http.ResponseWriter, r *http.Request) {
 		t := template.Must(template.ParseFiles("template/panel.html"))
 		t.Execute(w, nil)
 	} else {
-		sr := serverRespond{
-			Code:   400,
-			Method: r.Method,
-			Text:   "Method not allowed",
-		}
-		output, err := json.Marshal(sr)
-		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
-		}
-		fmt.Fprintf(w, string(output))
+		methodNotAllowed(w, r)
 		serverLogger("Panel warning", r.Method+" method is not allowed for /panel, abandoned", WARN)
 	}
 }
@@ -333,16 +310,7 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 			serverLogger("Session invalid", sv.SessionID, WARN)
 		}
 	} else {
-		sr := serverRespond{
-			Code:   400,
-			Method: r.Method,
-			Text:   "Method not allowed",
-		}
-		output, err := json.Marshal(sr)
-		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
-		}
-		fmt.Fprintf(w, string(output))
+
 		serverLogger("Info warning", r.Method+" method is not allowed for /info, abandoned", WARN)
 	}
 }
@@ -402,16 +370,7 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		sr := serverRespond{
-			Code:   400,
-			Method: r.Method,
-			Text:   "Method not allowed",
-		}
-		output, err := json.Marshal(sr)
-		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
-		}
-		fmt.Fprintf(w, string(output))
+		methodNotAllowed(w, r)
 		serverLogger("Send warning", r.Method+" method is not allowed for /send, abandoned", WARN)
 	}
 }
