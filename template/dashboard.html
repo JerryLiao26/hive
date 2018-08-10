@@ -54,7 +54,7 @@
       .content-container {
         width: 80%;
         min-width: 600px;
-        height: 500px;
+        height: calc(100vh - 300px);
         margin-left: auto;
         margin-right: auto;
         overflow: auto;
@@ -75,7 +75,7 @@
       </div>
       <input type="text" id='filter' onkeyup='filter=this.value;filterList()' placeholder="Filter tags">
     </div>
-    <div class="content-container">
+    <div class="content-container" id='container'>
       <span id="wrapper">
         <p>[<span class="g-node" g-key="tag">TAG</span>][<span class="g-node" g-key="timestamp">TIMESTAMP</span>]<span class="g-node" g-key="content">CONTENT</span></p>
       </span>
@@ -137,12 +137,14 @@
             group.push(each)
           }
         }
-        if (group.length === 0) {
-          group = list
-        }
         render_list = group
       }
-      G.target('#wrapper').throw(render_list, true)
+      if (render_list && render_list.length > 0) {
+        document.getElementById('container').style.display = 'block'
+        G.target('#wrapper').throw(render_list, true)
+      } else {
+        document.getElementById('container').style.display = 'none'
+      }
     }
   </script>
 </html>
