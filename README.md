@@ -58,7 +58,7 @@ Rename the built file to hive, then you shall run server with command
 ```
 hive start 0.0.0.0:12580
 ```
-You shall see a welcome page by visiting ```http://0.0.0.0:12580/hello```. More command can be found with command ```hive help```
+You shall see a welcome page by visiting ```http://0.0.0.0:12580/hello```. More commands can be found with command ```hive help```
 
 ## Pages
 
@@ -171,6 +171,7 @@ Show tags of the authorized admin, as well as messages. Dashboard automatically 
 
 ## To-dos
 
+- [ ] Code pushers and command-line pusher
 - [ ] Add super admin and a button to restart **hive** for him/her
 - [ ] Add limit for API request(e.g. 60/min)
 - [ ] Improve token generate methods
