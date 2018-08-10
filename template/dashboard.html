@@ -59,6 +59,15 @@
         margin-right: auto;
         overflow: auto;
       }
+      .content-container p > span {
+        display: inline-block;
+      }
+      .content-container .tag {
+        width: 120px;
+        background-color: #FECB33;
+        text-align: center;
+        color: white;
+      }
       .honey {
         color: #FECB33;
         font-weight: bold;
@@ -77,7 +86,10 @@
     </div>
     <div class="content-container" id='container'>
       <span id="wrapper">
-        <p>[<span class="g-node" g-key="tag">TAG</span>][<span class="g-node" g-key="timestamp">TIMESTAMP</span>]<span class="g-node" g-key="content">CONTENT</span></p>
+        <p>
+          <span class="tag g-node" g-key="tag">TAG</span>
+          [<span class="timestamp g-node" g-key="timestamp">TIMESTAMP</span>]
+          <span class="g-node" g-key="content">CONTENT</span></p>
       </span>
     </div>
   </body>
@@ -119,7 +131,12 @@
           const data = JSON.parse(infoRequest.responseText)
           if (data.code === 200) {
             // Render data
-            list = data.messages
+            const group = []
+            for (let each of data.messages) {
+              each.timestamp = new Date(each.timestamp).toLocaleString()
+              group.push(each)
+            }
+            list = group
             filterList()
           }
         }
@@ -131,7 +148,7 @@
       if (filter.trim() === '') {
         render_list = list
       } else {
-        let group = []
+        const group = []
         for (let each of list) {
           if (each.tag.startsWith(filter)) {
             group.push(each)
