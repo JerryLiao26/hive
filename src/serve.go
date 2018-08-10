@@ -384,6 +384,10 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					serverLogger("JSON build error", err.Error(), ERROR)
 				}
+				// Cross origin headers
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+				w.Header().Set("content-type", "application/json")
 				fmt.Fprintf(w, string(output))
 				serverLogger("Message from", tag, INFO)
 			} else {
