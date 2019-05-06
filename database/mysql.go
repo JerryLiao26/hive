@@ -1,24 +1,26 @@
-package main
+package database
 
 import (
 	"database/sql"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/JerryLiao26/hive/helper"
 )
 
 func databaseError(err error) {
 	if err != nil {
-		serverLogger("Database error", err.Error(), "Error")
+		helper.ServerLogger("Database error", err.Error(), "Error")
 	}
 }
 
 func initString() string {
-	dbString := dbConf.username + ":" + dbConf.password + "@tcp(" + dbConf.addr + ":" + dbConf.port + ")/hive?charset=utf8&parseTime=true"
+	dbString := helper.DbConf.Username + ":" + helper.DbConf.Password + "@tcp(" + helper.DbConf.Addr + ":" + helper.DbConf.Port + ")/hive?charset=utf8&parseTime=true"
 	return dbString
 }
 
-func checkToken(cliToken string) (string, string) {
+func CheckToken(cliToken string) (string, string) {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -29,7 +31,7 @@ func checkToken(cliToken string) (string, string) {
 	res, err := db.Query("SELECT * FROM token")
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Extract data
 	for res.Next() {
@@ -49,7 +51,7 @@ func checkToken(cliToken string) (string, string) {
 	return "", ""
 }
 
-func checkTagDuplicate(cliTag string) bool {
+func CheckTagDuplicate(cliTag string) bool {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -60,7 +62,7 @@ func checkTagDuplicate(cliTag string) bool {
 	res, err := db.Query("SELECT * FROM token")
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Extract data
 	for res.Next() {
@@ -80,7 +82,7 @@ func checkTagDuplicate(cliTag string) bool {
 	return false
 }
 
-func checkAdminDuplicate(newAdmin string) bool {
+func CheckAdminDuplicate(newAdmin string) bool {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -91,7 +93,7 @@ func checkAdminDuplicate(newAdmin string) bool {
 	res, err := db.Query("SELECT * FROM admin")
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Extract data
 	for res.Next() {
@@ -109,7 +111,7 @@ func checkAdminDuplicate(newAdmin string) bool {
 	return false
 }
 
-func storeMessage(admin string, tag string, content string) bool {
+func StoreMessage(admin string, tag string, content string) bool {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -123,7 +125,7 @@ func storeMessage(admin string, tag string, content string) bool {
 	res, err := stmt.Exec(tag, admin, content, time.Now().Format("2006-01-02 15:04:05"))
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Validate
 	num, err := res.RowsAffected()
@@ -135,7 +137,7 @@ func storeMessage(admin string, tag string, content string) bool {
 	return false
 }
 
-func fetchMessages(admin string) []message {
+func FetchMessages(admin string) []helper.Message {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -150,10 +152,10 @@ func fetchMessages(admin string) []message {
 	res, err := stmt.Query(admin)
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Data array
-	var messages []message
+	var messages []helper.Message
 	// Extract data
 	for res.Next() {
 		var id int
@@ -164,7 +166,7 @@ func fetchMessages(admin string) []message {
 		err := res.Scan(&id, &tag, &admin, &content, &timestamp)
 		databaseError(err)
 		// Append data
-		var m message
+		var m helper.Message
 		m.ID = id
 		m.Tag = tag
 		m.Admin = admin
@@ -175,8 +177,8 @@ func fetchMessages(admin string) []message {
 	return messages
 }
 
-func storeToken(tag string, token string) bool {
-	admin := cliConf.admin
+func StoreToken(tag string, token string) bool {
+	admin := helper.CliConf.Admin
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -191,7 +193,7 @@ func storeToken(tag string, token string) bool {
 	res, err := stmt.Exec(tag, token, admin, time.Now().Format("2006-01-02 15:04:05"))
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Validate
 	num, err := res.RowsAffected()
@@ -203,8 +205,8 @@ func storeToken(tag string, token string) bool {
 	return false
 }
 
-func delToken(cliTag string) bool {
-	admin := cliConf.admin
+func DelToken(cliTag string) bool {
+	admin := helper.CliConf.Admin
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -219,7 +221,7 @@ func delToken(cliTag string) bool {
 	res, err := stmt.Exec(cliTag, admin)
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Validate
 	num, err := res.RowsAffected()
@@ -231,8 +233,8 @@ func delToken(cliTag string) bool {
 	return false
 }
 
-func fetchToken() []string {
-	admin := cliConf.admin
+func FetchToken() []string {
+	admin := helper.CliConf.Admin
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -247,7 +249,7 @@ func fetchToken() []string {
 	res, err := stmt.Query(admin)
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Data array
 	var tagNtoken []string
@@ -266,7 +268,7 @@ func fetchToken() []string {
 	return tagNtoken
 }
 
-func storeAdmin(admin string, token string) bool {
+func StoreAdmin(admin string, token string) bool {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -281,7 +283,7 @@ func storeAdmin(admin string, token string) bool {
 	res, err := stmt.Exec(admin, token, time.Now().Format("2006-01-02 15:04:05"))
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	// Validate
 	num, err := res.RowsAffected()
@@ -293,7 +295,7 @@ func storeAdmin(admin string, token string) bool {
 	return false
 }
 
-func fetchAdmin(token string) (string, bool) {
+func FetchAdmin(token string) (string, bool) {
 	// Make connect string
 	dbString := initString()
 	// Connect
@@ -314,7 +316,7 @@ func fetchAdmin(token string) (string, bool) {
 	}
 	databaseError(err)
 
-	db.Close()
+	_ = db.Close()
 
 	return name, true
 }

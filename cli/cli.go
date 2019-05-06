@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"crypto/md5"
@@ -6,20 +6,15 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/JerryLiao26/hive/config"
+	"github.com/JerryLiao26/hive/database"
+	"github.com/JerryLiao26/hive/helper"
+	"github.com/JerryLiao26/hive/server"
 )
 
-func str2comm(str string) Command {
-	return Command(str)
-}
-
-func checkSupport(comm Command) int {
-	for i := 0; i < len(supportedCommands); i++ {
-		if supportedCommands[i] == comm {
-			return i
-		}
-	}
-	return 0
-}
+// Supported command Handler
+var SupportedCommandHandlers = [...]func(){HelpHandler, startHandler, genHandler, setHandler, listHandler, authCliHandler, addHandler, delHandler}
 
 func serveHandler() {
 	// TODO: Server daemon
@@ -29,41 +24,42 @@ func startHandler() {
 	if len(os.Args) >= 3 {
 		str := os.Args[2]
 		group := strings.Split(str, ":")
-		serveConf.addr = group[0]
-		serveConf.port = group[1]
-		saveConf()
+		helper.ServeConf.Addr = group[0]
+		helper.ServeConf.Port = group[1]
+		config.SaveConf()
 	}
-	serve()
+
+	server.Serve()
 }
 
 func genHandler() {
-	if cliConf.admin != "" {
+	if helper.CliConf.Admin != "" {
 		if len(os.Args) >= 3 {
 			// Get data
 			tag := os.Args[2]
 			plain := tag + "hive"
 			// Check duplicate
-			if !checkTagDuplicate(tag) {
+			if !database.CheckTagDuplicate(tag) {
 				// Crypt with MD5
 				obj := md5.New()
 				obj.Write([]byte(plain))
 				cipher := obj.Sum(nil)
 				token := hex.EncodeToString(cipher)
 				// Store generated token
-				if storeToken(tag, token) {
-					cliLogger("Generated token:" + token)
-					cliLogger("Token with tag \"" + tag + "\" stored successfully")
+				if database.StoreToken(tag, token) {
+					helper.CliLogger("Generated token:" + token)
+					helper.CliLogger("Token with tag \"" + tag + "\" stored successfully")
 				} else {
-					cliLogger("Token store failed")
+					helper.CliLogger("Token store failed")
 				}
 			} else {
-				cliLogger("Tag duplicated. Please run \"hive list\" to see stored tags")
+				helper.CliLogger("Tag duplicated. Please run \"hive list\" to see stored tags")
 			}
 		} else {
-			helpHandler()
+			HelpHandler()
 		}
 	} else {
-		cliLogger("No authorized admin, please use hive auth [token] to authorize")
+		helper.CliLogger("No authorized admin, please use hive auth [token] to authorize")
 	}
 }
 
@@ -74,19 +70,19 @@ func setHandler() {
 		username := group[0]
 		password := group[1]
 		// Set conf
-		dbConf.username = username
-		dbConf.password = password
-		dbConf.addr = "127.0.0.1"
-		dbConf.port = "3306"
+		helper.DbConf.Username = username
+		helper.DbConf.Password = password
+		helper.DbConf.Addr = "127.0.0.1"
+		helper.DbConf.Port = "3306"
 		// Store conf
-		saveConf()
-		cliLogger("Database config stored")
+		config.SaveConf()
+		helper.CliLogger("Database config stored")
 	} else {
-		helpHandler()
+		HelpHandler()
 	}
 }
 
-func helpHandler() {
+func HelpHandler() {
 	fmt.Println("Usage:")
 	fmt.Println("hive [command] [args...]")
 	fmt.Println("Commands:")
@@ -105,30 +101,30 @@ func helpHandler() {
 }
 
 func listHandler() {
-	if cliConf.admin != "" {
-		output := fetchToken()
-		cliLogger("Stored token are listed below as \"tag:token\":")
+	if helper.CliConf.Admin != "" {
+		output := database.FetchToken()
+		helper.CliLogger("Stored token are listed below as \"tag:token\":")
 		for i := 0; i < len(output); i++ {
 			fmt.Println(output[i])
 		}
 	} else {
-		cliLogger("No authorized admin, please use hive auth [token] to authorize")
+		helper.CliLogger("No authorized admin, please use hive auth [token] to authorize")
 	}
 }
 
 func authCliHandler() {
 	if len(os.Args) >= 3 {
 		token := os.Args[2]
-		name, flag := fetchAdmin(token)
+		name, flag := database.FetchAdmin(token)
 		if flag {
-			cliConf.admin = name
-			saveConf() // Save authorized admin
-			cliLogger("Admin \"" + name + "\" authorized successfully")
+			helper.CliConf.Admin = name
+			config.SaveConf() // Save authorized admin
+			helper.CliLogger("Admin \"" + name + "\" authorized successfully")
 		} else {
-			cliLogger("No such admin with token \"" + token + "\"")
+			helper.CliLogger("No such admin with token \"" + token + "\"")
 		}
 	} else {
-		helpHandler()
+		HelpHandler()
 	}
 }
 
@@ -138,80 +134,67 @@ func addHandler() {
 		admin := os.Args[2]
 		plain := admin + "hive"
 		// Check duplicate
-		if !checkAdminDuplicate(admin) {
+		if !database.CheckAdminDuplicate(admin) {
 			// Crypt with MD5
 			obj := md5.New()
 			obj.Write([]byte(plain))
 			cipher := obj.Sum(nil)
 			token := hex.EncodeToString(cipher)
 			// Store generated token
-			if storeAdmin(admin, token) {
-				cliLogger("Generated token:" + token)
-				cliLogger("Admin \"" + admin + "\" stored successfully")
+			if database.StoreAdmin(admin, token) {
+				helper.CliLogger("Generated token:" + token)
+				helper.CliLogger("Admin \"" + admin + "\" stored successfully")
 			} else {
-				cliLogger("Token store failed")
+				helper.CliLogger("Token store failed")
 			}
 		} else {
-			cliLogger("Admin duplicated.")
+			helper.CliLogger("Admin duplicated.")
 		}
 	} else {
-		helpHandler()
+		HelpHandler()
 	}
 }
 
 func delHandler() {
-	if cliConf.admin != "" {
+	if helper.CliConf.Admin != "" {
 		if len(os.Args) >= 3 {
 			tag := os.Args[2]
-			if checkTagDuplicate(tag) {
-				if delToken(tag) {
-					cliLogger("Token with tag \"" + tag + "\" deleted")
+			if database.CheckTagDuplicate(tag) {
+				if database.DelToken(tag) {
+					helper.CliLogger("Token with tag \"" + tag + "\" deleted")
 				} else {
-					cliLogger("Token delete failed")
+					helper.CliLogger("Token delete failed")
 				}
 			} else {
-				cliLogger("No such tag named \"" + tag + "\". Please run \"hive list\" to see stored tags")
+				helper.CliLogger("No such tag named \"" + tag + "\". Please run \"hive list\" to see stored tags")
 			}
 		} else {
-			helpHandler()
+			HelpHandler()
 		}
 	} else {
-		cliLogger("No authorized admin, please use hive auth [token] to authorize")
+		helper.CliLogger("No authorized admin, please use hive auth [token] to authorize")
 	}
 }
 
-func firstHandler() {
+func FirstHandler() {
 	// Prompt
 	fmt.Println("It's your first time using hive-cli, let's configure it first.")
 	// Database config
 	fmt.Print("Database username:")
-	fmt.Scanln(&dbConf.username)
+	_, _ = fmt.Scanln(&helper.DbConf.Username)
 	fmt.Print("Database password:")
-	fmt.Scanln(&dbConf.password)
-	dbConf.addr = "127.0.0.1"
-	dbConf.port = "3306"
+	_, _ = fmt.Scanln(&helper.DbConf.Password)
+	helper.DbConf.Addr = "127.0.0.1"
+	helper.DbConf.Port = "3306"
 	// Server config
 	fmt.Print("Serving address(without port):")
-	fmt.Scanln(&serveConf.addr)
+	_, _ = fmt.Scanln(&helper.ServeConf.Addr)
 	fmt.Print("Serving port:")
-	fmt.Scanln(&serveConf.port)
+	_, _ = fmt.Scanln(&helper.ServeConf.Port)
 	// Build directory
-	dirString := confPath.homePath + string(os.PathSeparator) + confPath.confDir
-	os.MkdirAll(dirString, 0755)
-	saveConf()
+	dirString := helper.ConfPath.HomePath + string(os.PathSeparator) + helper.ConfPath.ConfDir
+	_ = os.MkdirAll(dirString, 0755)
+	config.SaveConf()
 	// Finish
 	fmt.Println("You can now use \"hive add [name]\" to add an admin and enjoy using hive!")
-}
-
-func main() {
-	if len(os.Args) >= 2 {
-		// Pre-load
-		loadConf()
-		// Get command
-		comm := str2comm(os.Args[1])
-		// Handler for command
-		supportedCommandHandlers[checkSupport(comm)]()
-	} else {
-		helpHandler()
-	}
 }

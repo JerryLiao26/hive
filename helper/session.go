@@ -1,4 +1,4 @@
-package main
+package helper
 
 import (
 	"crypto/md5"
@@ -21,7 +21,7 @@ type session struct {
 	id        string
 }
 
-func validateSession(id string, r *http.Request) (string, bool) {
+func ValidateSession(id string, r *http.Request) (string, bool) {
 	// Check in sessionStorage
 	for i, eachSession := range sessionStorage {
 		if eachSession.id == id && strings.Split(r.RemoteAddr, ":")[0] == eachSession.remoteIP {
@@ -37,7 +37,7 @@ func validateSession(id string, r *http.Request) (string, bool) {
 	return "", false
 }
 
-func addSession(name string, token string, r *http.Request) string {
+func AddSession(name string, token string, r *http.Request) string {
 	var s session
 	s.timestamp = time.Now().Unix()
 	s.remoteIP = strings.Split(r.RemoteAddr, ":")[0]

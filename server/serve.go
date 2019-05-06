@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/JerryLiao26/hive/database"
+	"github.com/JerryLiao26/hive/helper"
 )
 
 // GET method
@@ -25,15 +28,6 @@ type sessionValidate struct {
 	SessionID string `json:"sessionId"`
 }
 
-// message defines struct to store message data from database
-type message struct {
-	ID        int    `json:"id"`
-	Tag       string `json:"tag"`
-	Admin     string `json:"admin"`
-	Content   string `json:"content"`
-	Timestamp string `json:"timestamp"`
-}
-
 // messageRequest defines message request struct
 type messageRequest struct {
 	Text  string `json:"text"`
@@ -42,10 +36,10 @@ type messageRequest struct {
 
 // messageRespond defines message respond struct
 type messageRespond struct {
-	Code     int       `json:"code"`
-	Text     string    `json:"text"`
-	Method   string    `json:"method"`
-	Messages []message `json:"messages"`
+	Code     int              `json:"code"`
+	Text     string           `json:"text"`
+	Method   string           `json:"method"`
+	Messages []helper.Message `json:"messages"`
 }
 
 // infoRespond defines respond struct for request
@@ -76,9 +70,9 @@ type serverRespond struct {
 }
 
 func enterLog(w http.ResponseWriter, r *http.Request) {
-	serverLogger("From", r.RemoteAddr, INFO)
-	serverLogger(r.Method, r.URL.Path, INFO)
-	serverLogger("Scheme", r.URL.Scheme, INFO)
+	helper.ServerLogger("From", r.RemoteAddr, helper.INFO)
+	helper.ServerLogger(r.Method, r.URL.Path, helper.INFO)
+	helper.ServerLogger("Scheme", r.URL.Scheme, helper.INFO)
 }
 
 func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
@@ -89,34 +83,34 @@ func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	}
 	output, err := json.Marshal(sr)
 	if err != nil {
-		serverLogger("JSON build error", err.Error(), ERROR)
+		helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 	}
-	fmt.Fprintf(w, string(output))
+	_, _ = fmt.Fprintf(w, string(output))
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	enterLog(w, r)
 	t := template.Must(template.ParseFiles("template/hello.html"))
-	t.Execute(w, serveConf.port)
+	_ = t.Execute(w, helper.ServeConf.Port)
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
 	enterLog(w, r)
 	if r.Method == GET {
 		t := template.Must(template.ParseFiles("template/auth.html"))
-		t.Execute(w, nil)
+		_ = t.Execute(w, nil)
 	} else if r.Method == POST {
 		var ta tokenAuth
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&ta)
 		if err != nil {
-			serverLogger("JSON parse error", err.Error(), ERROR)
+			helper.ServerLogger("JSON parse error", err.Error(), helper.ERROR)
 		}
 		// Validate token
-		name, flag := fetchAdmin(ta.Token)
+		name, flag := database.FetchAdmin(ta.Token)
 		if flag {
 			// Generate session
-			sessionID := addSession(name, ta.Token, r)
+			sessionID := helper.AddSession(name, ta.Token, r)
 			//  Response to client
 			ar := authRespond{
 				Code:      200,
@@ -127,10 +121,10 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(ar)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Auth token verified", ta.Token, INFO)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Auth token verified", ta.Token, helper.INFO)
 		} else {
 			//  Response to client
 			sr := serverRespond{
@@ -140,14 +134,14 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(sr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Auth token invalid", ta.Token, WARN)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Auth token invalid", ta.Token, helper.WARN)
 		}
 	} else {
 		methodNotAllowed(w, r)
-		serverLogger("Auth warning", r.Method+" method is not allowed for /auth, abandoned", WARN)
+		helper.ServerLogger("Auth warning", r.Method+" method is not allowed for /auth, abandoned", helper.WARN)
 	}
 }
 
@@ -157,11 +151,11 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&sv)
 		if err != nil {
-			serverLogger("JSON parse error", err.Error(), ERROR)
+			helper.ServerLogger("JSON parse error", err.Error(), helper.ERROR)
 		}
-		name, flag := validateSession(sv.SessionID, r)
+		name, flag := helper.ValidateSession(sv.SessionID, r)
 		if flag {
-			group := fetchMessages(name)
+			group := database.FetchMessages(name)
 			// Respond to client
 			mr := messageRespond{
 				Code:     200,
@@ -171,10 +165,10 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(mr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Messages delivered", r.RemoteAddr, INFO)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Messages delivered", r.RemoteAddr, helper.INFO)
 		} else {
 			//  Response to client
 			sr := serverRespond{
@@ -184,14 +178,14 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(sr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Session invalid", sv.SessionID, WARN)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Session invalid", sv.SessionID, helper.WARN)
 		}
 	} else {
 		methodNotAllowed(w, r)
-		serverLogger("Message warning", r.Method+" method is not allowed for /messages, abandoned", WARN)
+		helper.ServerLogger("Message warning", r.Method+" method is not allowed for /messages, abandoned", helper.WARN)
 	}
 }
 
@@ -202,9 +196,9 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&sv)
 		if err != nil {
-			serverLogger("JSON parse error", err.Error(), ERROR)
+			helper.ServerLogger("JSON parse error", err.Error(), helper.ERROR)
 		}
-		name, flag := validateSession(sv.SessionID, r)
+		name, flag := helper.ValidateSession(sv.SessionID, r)
 		if flag {
 			//  Response to client
 			sr := serverRespond{
@@ -214,10 +208,10 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(sr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Session of admin \""+name+"\" verified", sv.SessionID, INFO)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Session of admin \""+name+"\" verified", sv.SessionID, helper.INFO)
 		} else {
 			//  Response to client
 			sr := serverRespond{
@@ -227,14 +221,14 @@ func sessionHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(sr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Session invalid", sv.SessionID, WARN)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Session invalid", sv.SessionID, helper.WARN)
 		}
 	} else {
 		methodNotAllowed(w, r)
-		serverLogger("Session warning", r.Method+" method is not allowed for /session, abandoned", WARN)
+		helper.ServerLogger("Session warning", r.Method+" method is not allowed for /session, abandoned", helper.WARN)
 	}
 }
 
@@ -242,7 +236,7 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	enterLog(w, r)
 	if r.Method == GET {
 		t := template.Must(template.ParseFiles("template/dashboard.html"))
-		t.Execute(w, nil)
+		_ = t.Execute(w, nil)
 	} else {
 		sr := serverRespond{
 			Code:   400,
@@ -251,10 +245,10 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		output, err := json.Marshal(sr)
 		if err != nil {
-			serverLogger("JSON build error", err.Error(), ERROR)
+			helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 		}
-		fmt.Fprintf(w, string(output))
-		serverLogger("Dashboard warning", r.Method+" method is not allowed for /dashboard, abandoned", WARN)
+		_, _ = fmt.Fprintf(w, string(output))
+		helper.ServerLogger("Dashboard warning", r.Method+" method is not allowed for /dashboard, abandoned", helper.WARN)
 	}
 }
 
@@ -262,10 +256,10 @@ func panelHandler(w http.ResponseWriter, r *http.Request) {
 	enterLog(w, r)
 	if r.Method == GET {
 		t := template.Must(template.ParseFiles("template/panel.html"))
-		t.Execute(w, nil)
+		_ = t.Execute(w, nil)
 	} else {
 		methodNotAllowed(w, r)
-		serverLogger("Panel warning", r.Method+" method is not allowed for /panel, abandoned", WARN)
+		helper.ServerLogger("Panel warning", r.Method+" method is not allowed for /panel, abandoned", helper.WARN)
 	}
 }
 
@@ -276,25 +270,25 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&sv)
 		if err != nil {
-			serverLogger("JSON parse error", err.Error(), ERROR)
+			helper.ServerLogger("JSON parse error", err.Error(), helper.ERROR)
 		}
-		name, flag := validateSession(sv.SessionID, r)
+		name, flag := helper.ValidateSession(sv.SessionID, r)
 		if flag {
 			ir := infoRespond{
 				Code:       200,
 				Text:       "Session verified",
 				Method:     r.Method,
-				StartTime:  serverInfo.startTime,
-				ServerOS:   serverInfo.serverOS,
-				ServerArch: serverInfo.serverArch,
+				StartTime:  helper.ServerInfo.StartTime,
+				ServerOS:   helper.ServerInfo.ServerOS,
+				ServerArch: helper.ServerInfo.ServerArch,
 				AdminName:  name,
 			}
 			output, err := json.Marshal(ir)
 			if err != nil {
-				serverLogger("Session invalid", sv.SessionID, ERROR)
+				helper.ServerLogger("Session invalid", sv.SessionID, helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Info sent", r.RemoteAddr, INFO)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Info sent", r.RemoteAddr, helper.INFO)
 		} else {
 			//  Response to client
 			sr := serverRespond{
@@ -304,14 +298,14 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(sr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Session invalid", sv.SessionID, WARN)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Session invalid", sv.SessionID, helper.WARN)
 		}
 	} else {
-
-		serverLogger("Info warning", r.Method+" method is not allowed for /info, abandoned", WARN)
+		methodNotAllowed(w, r)
+		helper.ServerLogger("Info warning", r.Method+" method is not allowed for /info, abandoned", helper.WARN)
 	}
 }
 
@@ -322,10 +316,10 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&m)
 		if err != nil {
-			serverLogger("JSON parse error", err.Error(), ERROR)
+			helper.ServerLogger("JSON parse error", err.Error(), helper.ERROR)
 		}
 		// Checking token
-		name, tag := checkToken(m.Token)
+		name, tag := database.CheckToken(m.Token)
 		if tag == "" {
 			//  Response to client
 			sr := serverRespond{
@@ -335,13 +329,13 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			output, err := json.Marshal(sr)
 			if err != nil {
-				serverLogger("JSON build error", err.Error(), ERROR)
+				helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 			}
-			fmt.Fprintf(w, string(output))
-			serverLogger("Token invalid", m.Token, WARN)
+			_, _ = fmt.Fprintf(w, string(output))
+			helper.ServerLogger("Token invalid", m.Token, helper.WARN)
 		} else {
 			// Storing data
-			if storeMessage(name, tag, m.Text) {
+			if database.StoreMessage(name, tag, m.Text) {
 				//  Response to client
 				sr := serverRespond{
 					Code:   200,
@@ -350,10 +344,10 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				output, err := json.Marshal(sr)
 				if err != nil {
-					serverLogger("JSON build error", err.Error(), ERROR)
+					helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 				}
-				fmt.Fprintf(w, string(output))
-				serverLogger("Message from", tag, INFO)
+				_, _ = fmt.Fprintf(w, string(output))
+				helper.ServerLogger("Message from", tag, helper.INFO)
 			} else {
 				//  Response to client
 				sr := serverRespond{
@@ -363,21 +357,21 @@ func sendHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				output, err := json.Marshal(sr)
 				if err != nil {
-					serverLogger("JSON build error", err.Error(), ERROR)
+					helper.ServerLogger("JSON build error", err.Error(), helper.ERROR)
 				}
-				fmt.Fprintf(w, string(output))
-				serverLogger("Message saving failed", tag, WARN)
+				_, _ = fmt.Fprintf(w, string(output))
+				helper.ServerLogger("Message saving failed", tag, helper.WARN)
 			}
 		}
 	} else {
 		methodNotAllowed(w, r)
-		serverLogger("Send warning", r.Method+" method is not allowed for /send, abandoned", WARN)
+		helper.ServerLogger("Send warning", r.Method+" method is not allowed for /send, abandoned", helper.WARN)
 	}
 }
 
-func serve() {
+func Serve() {
 	// Get serve string
-	serveString := serveConf.addr + ":" + serveConf.port
+	serveString := helper.ServeConf.Addr + ":" + helper.ServeConf.Port
 	// Handlers
 	http.HandleFunc("/send", sendHandler)
 	http.HandleFunc("/info", infoHandler)
@@ -391,13 +385,13 @@ func serve() {
 	fileServer := http.FileServer(http.Dir("static"))
 	http.Handle("/", fileServer)
 	// Server start
-	serverInfo.startTime = time.Now().Format("2006-01-02 15:04:05")
-	serverInfo.serverOS = runtime.GOOS
-	serverInfo.serverArch = runtime.GOARCH
-	serverLogger("Starting", "Serve at "+serveString, INFO)
+	helper.ServerInfo.StartTime = time.Now().Format("2006-01-02 15:04:05")
+	helper.ServerInfo.ServerOS = runtime.GOOS
+	helper.ServerInfo.ServerArch = runtime.GOARCH
+	helper.ServerLogger("Starting", "Serve at "+serveString, helper.INFO)
 	err := http.ListenAndServe(serveString, nil)
 	// Error
 	if err != nil {
-		serverLogger("Cannot start", err.Error(), ERROR)
+		helper.ServerLogger("Cannot start", err.Error(), helper.ERROR)
 	}
 }
