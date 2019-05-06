@@ -23,7 +23,7 @@ Originally [LAM](https://github.com/JerryLiao26/LAM), **hive** is now a more ele
 
 ### Prepare
 
-**Hive** use [dep](https://golang.github.io/dep/) as Go package manager. Run ```dep ensure``` in project folder will install all dependencies under ```vendor/``` folder.
+**Hive** use go [mod](https://github.com/golang/go/wiki/Modules) for dependency management. Run ```go build``` in project folder will install all dependencies under ```$GOPATH/pkg/mod/``` folder.
 
 ### Database
 
@@ -52,7 +52,7 @@ There's an sql file under ```sql/``` for you to import
 
 Navigate to project folder, simply run
 ```
-go build src/*
+go build main.go
 ```
 Rename the built file to hive, then you shall run server with command
 ```
