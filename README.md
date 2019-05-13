@@ -6,7 +6,7 @@
 
 [![Build Status](https://travis-ci.org/JerryLiao26/hive.svg?branch=master)](https://travis-ci.org/JerryLiao26/hive)
 [![Go Report Card](https://goreportcard.com/badge/github.com/JerryLiao26/hive)](https://goreportcard.com/report/github.com/JerryLiao26/hive)
-[![codebeat badge](https://codebeat.co/badges/3737204a-ce9b-4d80-a930-5a8735fd709c)](https://codebeat.co/projects/github-com-jerryliao26-hive-master)
+[![codebeat badge](https://codebeat.co/badges/4e16d63d-1c79-43ed-86af-ac6fdb7c0367)](https://codebeat.co/projects/github-com-jerryliao26-hive-master)
 [![License](https://img.shields.io/github/license/JerryLiao26/hive.svg)](https://opensource.org/licenses/MIT)
 
 **Hive** is the light-weight and elegant message center for developers
